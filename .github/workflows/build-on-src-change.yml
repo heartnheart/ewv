@@ -1,0 +1,38 @@
+name: Build And Release DLL
+
+on:
+  push:
+    paths:
+      - "src/**"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        shell: powershell
+        run: |
+          cargo install patch-crate
+          cargo patch-crate
+          cargo build
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.sha }}
+          name: ${{ github.sha }}
+          files: target/debug/ewv_native.dll
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
